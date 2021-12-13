@@ -21,6 +21,20 @@ final class DatabaseManager{
     }
 }
 
+extension DatabaseManager {
+    
+    public func geteDataFor(path: String, completion: @escaping (Result<Any, Error>) -> Void) {
+        self.database.child("\(path)").observeSingleEvent(of: .value) {snapshot in
+            guard let value = snapshot.value else {
+                completion(.failure(DatabaseErrors.failedToFetch))
+                return
+            }
+            completion(.success(value))
+        }
+    } 
+}
+
+
 // MARK :-  Account Management
 
 extension DatabaseManager {
@@ -31,7 +45,7 @@ extension DatabaseManager {
         safeEmail = safeEmail.replacingOccurrences(of: "@", with: "-")
         
         database.child(safeEmail).observeSingleEvent(of: .value, with: { snapshot in
-            guard let  _ = snapshot.value else{
+            guard snapshot.value as? [String: Any] != nil else {
                 completion(false)
                 return
             }

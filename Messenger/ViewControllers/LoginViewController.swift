@@ -62,7 +62,7 @@ class LoginViewController: UIViewController {
         field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 0))
         field.leftViewMode = .always
         field.backgroundColor = .white
-        field.isSecureTextEntry = true
+//        field.isSecureTextEntry = true
         return field
     }()
     
@@ -170,8 +170,22 @@ class LoginViewController: UIViewController {
             
             let user = result.user
             
-            UserDefaults.standard.set(email, forKey: "email")
+            let safeEmail = DatabaseManager.safeEmail(emailAddress: email)
+            DatabaseManager.shared.geteDataFor(path: safeEmail, completion: { result in
+                switch result {
+                case .success(let value):
+                    guard let userData = value as? [String:Any], let firstName = userData["first_name"] as? String, let lastName = userData["first_name"] as? String else {
+                        return
+                    }
+                    
+                    UserDefaults.standard.set("\(firstName) \(lastName)", forKey: "name")
+                    
+                case .failure(let error):
+                    print("Failed to read data with error \(error)")
+                }
+            })
             
+            UserDefaults.standard.set(email, forKey: "email")
             print("\(user)  Successfully Logged In")
             
             strongSelf.navigationController?.dismiss(animated: true, completion: nil)
@@ -204,7 +218,8 @@ class LoginViewController: UIViewController {
                     }
                     
                     UserDefaults.standard.set(email, forKey: "email")
-                
+                    UserDefaults.standard.set("\(firstName) \(lastName)", forKey: "name")
+                    
                     DatabaseManager.shared.userExists(with: email, completion: { exists in
                         if !exists{
                             
@@ -327,7 +342,7 @@ extension LoginViewController: LoginButtonDelegate {
             }
                 
             UserDefaults.standard.set(email, forKey: "email")
-            
+            UserDefaults.standard.set("\(firstName) \(lastName)", forKey: "name")
             DatabaseManager.shared.userExists(with: email, completion: { exists in
                 if !exists{
                     let chatUser = ChatAppUser(firstName: firstName, lastName: lastName, emailAddress: email)
